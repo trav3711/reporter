@@ -27,11 +27,11 @@
         - ENDPOINTS
         - master dictionary that becomes JSON output
         - list of tag,class tuples to grab content from
-            - topics
-            - article title
-            - article author
-            - article date
-            - article body
+            1. tag, topics class
+            2. tag, article title class
+            3. tag, article author class
+            4. tag, article date class
+            5. tag, article body
             -
     * functions
         - get_endpoints
