@@ -48,7 +48,6 @@ class Scraper(object):
                     #print(articles_section.prettify())
                     articles = articles_section.find_all(self.TAGS['articles'][0], attrs={self.TAGS['articles'][1]:self.TAGS['articles'][2]})
                     for article in articles:
-                        article_date = 
                         link = article.find('a', href=True)['href']
                         if key == 'Graphic detail':
                             link = link.replace(self.BASE_URL, '')
@@ -56,10 +55,11 @@ class Scraper(object):
                         article_page = requests.get(self.BASE_URL + link)
                         #print(article_page)
                         article_soup = bs(article_page.content, 'html.parser')
-
+                        article_date = article_soup.find(self.TAGS['date'][0], attrs={self.TAGS['date'][1]:self.TAGS['date'][2]})
                         body = article_soup.find_all(self.TAGS['body'][0], attrs={self.TAGS['body'][1]:self.TAGS['body'][2]})
                         for p in body:
-                            print(p.text)
+                            print(article_date.text)
+                            #print(p.text)
 
 
 
@@ -82,7 +82,7 @@ def main():
                 'nav_section':('ul', 'data-testid', 'mini-nav'),
                 'articles_section':('div', 'class', 'css-13mho3u'),
                 'articles':('div', 'class', 'css-1l4spti'),
-                'date':('span', 'data-testid', 'todays-date'),
+                'date':('span', 'class', ['css-1sbuyqj', 'e16638kd3']),
                 'title':('h1', 'data-test-id', 'headline'),
                 'body':('p', 'class', ['css-158dogj', 'evys1bk0'])
                 }
@@ -92,6 +92,7 @@ def main():
                       'nav_section': ('ul', 'class', 'ds-navigation-list-items--section'),
                       'articles_section':('div', 'class', ['layout-section-collection', 'ds-layout-grid']),
                       'articles':('div', 'class', 'teaser__text'),
+                      'date':('time', 'class', 'article__dateline-datetime'),
                       'title':('span', 'class', 'article__headline'),
                       'body':('p', 'class', 'article__body-text')
                       }
