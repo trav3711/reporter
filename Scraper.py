@@ -1,14 +1,15 @@
-import requests, sys, os, errno, time, json
+import requests, sys, os, errno, time, json, datetime
 from bs4 import BeautifulSoup as bs
 
 class Scraper(object):
     """Scrapes a news website for all available articles"""
 
-    def __init__(self, url, tags):
+    def __init__(self, org_name, url, tags):
         #super(Scraper, self).__init__()
         self.BASE_URL = url
         self.TAGS = tags
         self.ENDPOINTS = {}
+        self.ORG_NAME = org_name
 
 
     def scrape(self):
@@ -32,10 +33,6 @@ class Scraper(object):
                 #self.ENDPOINTS[n.text] = n['href']
         self.ENDPOINTS = set_endpoints(self)
 
-        def read_article(self):
-            pass
-
-
         def get_articles(self):
             """trying to get a list of all the articles"""
 
@@ -55,20 +52,41 @@ class Scraper(object):
                         article_page = requests.get(self.BASE_URL + link)
                         #print(article_page)
                         article_soup = bs(article_page.content, 'html.parser')
-                        article_date = article_soup.find(self.TAGS['date'][0], attrs={self.TAGS['date'][1]:self.TAGS['date'][2]})
+                        article_title = article_soup.find(self.TAGS['title'][0], attrs={self.TAGS['title'][1]:self.TAGS['title'][2]}).text
+                        article_title = article_title.replace(' ', '-').lower().replace("'", "")
                         body = article_soup.find_all(self.TAGS['body'][0], attrs={self.TAGS['body'][1]:self.TAGS['body'][2]})
-                        for p in body:
-                            print(article_date.text)
-                            #print(p.text)
 
+                        article_date = article_soup.find(self.TAGS['date'][0], attrs={self.TAGS['date'][1]:self.TAGS['date'][2]})
+                        date_replacements = ['st', 'nd', 'rd', 'th', '.', ',']
+                        date_str = article_date.text
+                        for str in date_replacements:
+                            date_str = date_str.replace(str, '')
+                        datetime_obj = datetime.datetime.strptime(date_str, '%b %d %Y')
+                        article_date = datetime_obj.strftime('%m-%d-%Y')
 
+                        full_path = 'data/{0}/{1}/{1}__{2}.txt'.format(self.ORG_NAME, article_date, article_title)
 
+                        if not os.path.exists(os.path.dirname(full_path)):
+                            try:
+                                os.makedirs(os.path.dirname(full_path))
+                            except OSError as exc: # Guard against race condition
+                                if exc.errno != errno.EEXIST:
+                                    raise
+
+                        with open(full_path, "w") as f:
+                            f.write(article_title)
+                            f.write('\n')
+                            f.write(article_date )
+                            f.write('\n')
+                            for p in body:
+                                f.write(p.text)
+                            print('wrote: ' + article_date + '___' + article_title)
+                            f.close()
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                    print(exc_type, fname, exc_tb.tb_lineno)
-                #break
-                #print('\n')
+                    print(exc_type, fname, exc_tb.tb_lineno, article_date)
+                #time.sleep(15)
         get_articles(self)
 
 
@@ -97,11 +115,11 @@ def main():
                       'body':('p', 'class', 'article__body-text')
                       }
 
-    nyt = Scraper(nyt_url, nyt_tags)
-    economist = Scraper(economist_url, economist_tags)
+    nyt = Scraper('nyt', nyt_url, nyt_tags)
+    economist = Scraper('economist', economist_url, economist_tags)
     nyt.scrape()
     #print(json.dumps(nyt.ENDPOINTS, indent = 4))
-    #economist.scrape()
+    economist.scrape()
     #print(json.dumps(economist.ENDPOINTS, indent = 4))
 
 if __name__ == '__main__':
